@@ -39,7 +39,7 @@ GLuint compileShader(GLenum type, const char* source)
         glGetShaderInfoLog(shader, 512, NULL, infoLog);
         fprintf(stderr, "ERROR::SHADER::COMPILATION_FAILED\n%s\n", infoLog);
         glDeleteShader(shader);
-        return 0; // Kembalikan 0 jika ada error
+        return 0;
     }
 
     return shader;
@@ -79,13 +79,18 @@ int main()
     }
 
     glfwMakeContextCurrent(window); 
+
+    glewExperimental = GL_TRUE;
     glewInit();
 
     GLuint program = createShaderProgram();
     glUseProgram(program);
 
     GLfloat vertices[] = {
-        0.0f, 0.5f, 0.0f, 1.0f, 0.0f,
+        // Position         // Color
+        0.0f,  0.5f, 0.0f,  0.0f, 1.0f, 0.0f,
+        -0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, 0.0f,  2.0f, 0.0f, 1.0f
     };
 
     GLuint vbo, vao;
@@ -96,12 +101,28 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+    GLint posAttrib = glGetAttribLocation(program, "position");
+    glEnableVertexAttribArray(posAttrib);
+    glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
+
+    GLint colAttrib = glGetAttribLocation(program, "color");
+    glEnableVertexAttribArray(colAttrib);
+    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
+        
+        glBindVertexArray(vao);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
         glfwSwapBuffers(window); 
         glfwPollEvents();
     }
+
+    glDeleteProgram(program);
+    glDeleteBuffers(1, &vbo);
+    glDeleteVertexArrays(1, &vao);
 
     glfwDestroyWindow(window); 
     glfwTerminate();
